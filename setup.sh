@@ -3,6 +3,15 @@ set -e
 
 SCRIPT_DIR=$(dirname "$0")
 
-echo $SCRIPT_DIR
+mkdir -p ~/.configs-orig
 
-cp "$SCRIPT_DIR/.vimrc" ~/.vimrc
+if ([ ! -L ~/.bashrc ]); then
+  mv ~/.bashrc ~/.configs-orig/
+  ln -s "$SCRIPT_DIR/.bashrc" ~/.bashrc
+fi
+
+if ([ ! -L ~/.vimrc ]); then
+  mv ~/.vimrc ~/.configs-orig/
+  ln -s "$SCRIPT_DIR/.vimrc" ~/.vimrc
+fi
+
