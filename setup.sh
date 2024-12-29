@@ -3,8 +3,10 @@ set -e
 
 SCRIPT_DIR=$(dirname "$0")
 
-sudo apt update
-sudo apt install curl git htop vim
+if groups | grep -q sudo; then
+  sudo apt update
+  sudo apt install curl git htop vim
+fi
 
 mkdir -p ~/.configs-orig
 
