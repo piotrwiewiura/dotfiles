@@ -3,6 +3,9 @@ set -e
 
 SCRIPT_DIR=$(dirname "$0")
 
+sudo apt update
+sudo apt install curl git htop vim
+
 mkdir -p ~/.configs-orig
 
 if ([ ! -L ~/.bashrc ]); then
