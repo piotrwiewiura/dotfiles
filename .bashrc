@@ -116,6 +116,7 @@ fi
 
 # ls options doesn't allow for the sorting I want, so using AWK here.
 # Inspired by https://github.com/RichardBronosky/dotfiles
+# and https://stackoverflow.com/a/51141872/2271042
 eval 'function l(){ ls -Ahl --color=always $* | awk -f ~/.ls.awk; }'
 
 if command -v kubectl 2>&1 >/dev/null
