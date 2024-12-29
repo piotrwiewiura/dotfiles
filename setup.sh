@@ -11,12 +11,16 @@ fi
 mkdir -p ~/.configs-orig
 
 if ([ ! -L ~/.bashrc ]); then
-  [ ! -f src ] || mv ~/.bashrc ~/.configs-orig/
+  [ ! -f ~/.bashrc ] || mv ~/.bashrc ~/.configs-orig/
   ln -s "$SCRIPT_DIR/.bashrc" ~/.bashrc
 fi
 
 if ([ ! -L ~/.vimrc ]); then
-  [ ! -f src ] || mv ~/.vimrc ~/.configs-orig/
+  [ ! -f ~/.vimrc ] || mv ~/.vimrc ~/.configs-orig/
   ln -s "$SCRIPT_DIR/.vimrc" ~/.vimrc
 fi
 
+if ([ ! -L ~/.ls.awk ]); then
+  [ ! -f ~/.ls.awk ] || mv ~/.ls.awk ~/.configs-orig/
+  ln -s "$SCRIPT_DIR/.ls.awk" ~/.ls.awk
+fi
