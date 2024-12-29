@@ -1,7 +1,7 @@
 # Stop on error
 set -e
 
-SCRIPT_DIR=$(dirname "$0")
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 if groups | grep -q sudo; then
   sudo apt update
