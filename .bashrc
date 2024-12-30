@@ -123,5 +123,9 @@ if command -v kubectl 2>&1 >/dev/null
 then
   alias k='kubectl'
   complete -F __start_kubectl k
+
+  # set the copied k3s config as KUBECONFIG, so that sudo is not necessary to run kubectl
+  # see https://github.com/k3s-io/k3s/issues/389#issuecomment-745808339
+  export KUBECONFIG=~/.kube/k3s-config
 fi
 
