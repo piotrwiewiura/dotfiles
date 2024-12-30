@@ -30,4 +30,6 @@ if [ -f /etc/rancher/k3s/k3s.yaml ]; then
   sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/k3s-config && sudo chown $USER: ~/.kube/k3s-config
 fi
 
+# TODO: The below won't work because .bashrc checks whether it's run interactively or not:
+# https://unix.stackexchange.com/questions/481816/sourcing-bashrc-inside-script-doesnt-update-the-env-variables
 source .bashrc
