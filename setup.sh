@@ -25,6 +25,7 @@ link_file .vimrc
 link_file .ls.awk
 
 # if k3s is installed then copy the config to the home directory so that sudo is not necessary to run kubectl
+# see https://github.com/k3s-io/k3s/issues/389#issuecomment-745808339
 if [ -f /etc/rancher/k3s/k3s.yaml]; then
   sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/k3s-config && sudo chown $USER: ~/.kube/k3s-config
 fi
