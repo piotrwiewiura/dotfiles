@@ -129,3 +129,7 @@ then
   export KUBECONFIG=~/.kube/k3s-config
 fi
 
+# Set GPG_TTY for interactive shells to allow password prompts on the console
+if [ -t 0 ]; then
+  export GPG_TTY=$(tty)
+fi
