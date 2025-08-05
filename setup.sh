@@ -5,7 +5,7 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 if groups | grep -q sudo; then
   sudo apt update
-  sudo apt install curl git htop vim
+  sudo apt install curl git htop vim bat
 fi
 
 CONFIGS_ORIG="$HOME/.configs-orig/"
@@ -21,6 +21,7 @@ link_file() {
 }
 
 link_file .bashrc
+link_file .bash_aliases
 link_file .vimrc
 link_file .ls.awk
 
