@@ -135,6 +135,9 @@ if [ -t 0 ]; then
 fi
 
 apt-upgrade-info() {
+  local output=""
+  local count=0
+  
   for pkg in $(apt list --upgradable 2>/dev/null | tail -n +2 | cut -d'/' -f1); do
     # Color codes
     BRIGHT_BLUE='\033[1;94m'
@@ -145,26 +148,33 @@ apt-upgrade-info() {
     MAGENTA='\033[1;35m'
     NC='\033[0m' # No Color
     
-    echo -e "${BRIGHT_BLUE}=== $pkg ===${NC}"
+    output+="\n${BRIGHT_BLUE}=== $pkg ===${NC}\n"
     
     # Get current and new versions
     current_version=$(dpkg -l 2>/dev/null | grep "^ii  $pkg " | awk '{print $3}')
     new_version=$(apt list --upgradable 2>/dev/null | grep "^$pkg/" | cut -d' ' -f2)
     
     if [ -z "$current_version" ]; then
-      echo -e "${MAGENTA}Installing:${NC} ${GREEN}$new_version${NC}"
+      output+="${MAGENTA}Installing:${NC} ${GREEN}$new_version${NC}\n\n"
     else
-      echo -e "${YELLOW}Upgrading:${NC} ${RED}$current_version${NC} ${CYAN}→${NC} ${GREEN}$new_version${NC}"
+      output+="${YELLOW}Upgrading:${NC} ${RED}$current_version${NC} ${CYAN}→${NC} ${GREEN}$new_version${NC}\n\n"
     fi
-    echo
     
     # Get full description with colored first line
     description=$(apt-cache show $pkg | sed -n '/^Description-en:/,/^[^ ]/p' | sed '$d' | sed 's/^Description-en: //' | sed 's/^ //')
     first_line=$(echo "$description" | head -n1)
     rest_lines=$(echo "$description" | tail -n +2)
     
-    echo -e "${CYAN}$first_line${NC}"
-    echo "$rest_lines"
-    echo
+    output+="${CYAN}$first_line${NC}\n"
+    output+="$rest_lines\n\n"
+    
+    ((count++))
   done
+  
+  # Use less if more than 5 packages, otherwise print directly
+  if [ $count -gt 5 ]; then
+    echo -e "$output" | less -R
+  else
+    echo -e "$output"
+  fi
 }
