@@ -60,7 +60,7 @@ alias gco='git checkout'
 # OTHER ALIASES
 # ============================================================================
 # Network
-alias ports='netstat -tulanp'
+alias ports='ss -tulanp' 
 
 # System info
 alias sysinfo='inxi -Fxz'
