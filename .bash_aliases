@@ -57,6 +57,18 @@ alias gb='git branch'
 alias gco='git checkout'
 
 # ============================================================================
+# OTHER ALIASES
+# ============================================================================
+# Network
+alias ports='netstat -tulanp'
+
+# System info
+alias sysinfo='inxi -Fxz'
+
+# Docker (if used)
+alias dps='docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"'
+
+# ============================================================================
 # UTILITY FUNCTIONS
 # ============================================================================
 
@@ -71,6 +83,8 @@ extract() {
         case "$1" in
             *.tar.bz2)   tar xjf "$1"     ;;
             *.tar.gz)    tar xzf "$1"     ;;
+            *.tar.xz)    tar xf "$1"      ;;
+            *.tar.zst)   tar xf "$1"      ;;
             *.bz2)       bunzip2 "$1"     ;;
             *.rar)       unrar x "$1"     ;;
             *.gz)        gunzip "$1"      ;;
@@ -94,9 +108,9 @@ dud() {
     du -h --max-depth=1 "$@" | sort -hr
 }
 
-# Quick weather check (requires curl)
+# Your weather function defaults to Liverpool - make it more flexible:
 weather() {
-    local city="${1:-Liverpool}"
+    local city="${1:-$(curl -s ipinfo.io/city 2>/dev/null || echo 'Glasgow')}"
     curl -s "wttr.in/$city?format=3"
 }
 
@@ -185,3 +199,10 @@ apt-upgrade-info() {
 }
 
 alias aui='apt-upgrade-info'
+
+cleanup() {
+    echo "Cleaning package cache..."
+    sudo apt-get autoremove -y
+    sudo apt-get autoclean
+    echo "✓ Cleanup complete"
+}

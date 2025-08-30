@@ -41,6 +41,12 @@ echo "• Debian suite: ${CURRENT_SUITE:-unknown}"
 echo "• Sources format: $SOURCES_FORMAT"
 echo ""
 
+# Add error handling for network issues:
+if ! curl -s --connect-timeout 5 http://deb.debian.org >/dev/null; then
+    echo "❌ Cannot reach Debian repositories. Check internet connection."
+    exit 1
+fi
+
 # Handle upgrade from stable to testing
 if [[ "$CURRENT_SUITE" != "testing" ]]; then
     echo "🚀 You're currently on Debian $CURRENT_SUITE."
