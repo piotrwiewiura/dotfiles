@@ -20,11 +20,6 @@ alias ~='cd ~'
 alias -- -='cd -'           # go back to previous directory
 
 # ============================================================================
-# SAFETY ALIASES
-# ============================================================================
-alias mkdir='mkdir -pv'     # create parent directories and be verbose
-
-# ============================================================================
 # COLORED GREP
 # ============================================================================
 alias grep='grep --color=auto'
@@ -37,7 +32,6 @@ alias egrep='egrep --color=auto'
 alias df='df -h'            # human readable disk usage
 alias du='du -h'            # human readable directory usage
 alias free='free -h'        # human readable memory usage
-alias ps='ps auxf'          # detailed process list
 alias psg='ps aux | grep -v grep | grep -i -e VSZ -e' # search processes
 
 # ============================================================================
@@ -49,7 +43,6 @@ alias aptse='apt search'
 alias aptsh='apt show'
 alias aptli='apt list --installed'
 alias aptug='apt list --upgradable'
-alias aui='apt-upgrade-info'
 
 # ============================================================================
 # GIT ALIASES
@@ -190,3 +183,5 @@ apt-upgrade-info() {
         echo -e "$output"
     fi
 }
+
+alias aui='apt-upgrade-info'
