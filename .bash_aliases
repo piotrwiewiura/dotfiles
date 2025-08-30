@@ -108,13 +108,11 @@ dud() {
     du -h --max-depth=1 "$@" | sort -hr
 }
 
-# Your weather function defaults to Liverpool - make it more flexible:
 weather() {
-    local city="${1:-$(curl -s ipinfo.io/city 2>/dev/null || echo 'Glasgow')}"
+    local city="${1:-Glasgow}"  # Just use Glasgow directly
     curl -s "wttr.in/$city?format=3"
 }
 
-# Quick IP check
 myip() {
     curl -s ifconfig.me
     echo
