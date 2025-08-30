@@ -120,20 +120,36 @@ if [ -f /etc/debian_version ] && [ "$HAS_SUDO" = true ]; then
   echo "🐧 Debian system detected!"
   echo ""
   
-  # Check if we're on testing
+  # Check current suite and format
   DEBIAN_SUITE=""
+  SOURCES_FORMAT=""
+  
   if [ -f /etc/apt/sources.list.d/debian.sources ]; then
+    SOURCES_FORMAT="modern"
     DEBIAN_SUITE=$(grep -m1 "^Suites:" /etc/apt/sources.list.d/debian.sources 2>/dev/null | awk '{print $2}' || echo "")
   elif [ -f /etc/apt/sources.list ]; then
-    DEBIAN_SUITE=$(grep -m1 "deb.*debian" /etc/apt/sources.list 2>/dev/null | awk '{print $3}' || echo "")
+    SOURCES_FORMAT="legacy"
+    DEBIAN_SUITE=$(grep -m1 "^deb.*debian" /etc/apt/sources.list 2>/dev/null | awk '{print $3}' || echo "")
   fi
   
-  if [[ "$DEBIAN_SUITE" == "testing" || "$DEBIAN_SUITE" == "forky" ]]; then
-    echo "Debian Testing detected ($DEBIAN_SUITE)!"
-    echo "Would you like to set up Debian Testing best practices?"
-    echo "This adds unstable/experimental repos with proper pinning for better security updates."
+  echo "Detected: $DEBIAN_SUITE ($SOURCES_FORMAT format)"
+  
+  # Offer setup for any Debian system (stable or testing)
+  if [[ -n "$DEBIAN_SUITE" ]]; then
+    if [[ "$DEBIAN_SUITE" == "testing" || "$DEBIAN_SUITE" == "forky" ]]; then
+      echo "Debian Testing detected!"
+      echo "Would you like to set up Debian Testing best practices?"
+      echo "This adds unstable/experimental repos with proper pinning for better security updates."
+    else
+      echo "Debian Stable detected!"
+      echo "Would you like to upgrade to Debian Testing and set up best practices?"
+      echo "This will:"
+      echo "• Upgrade your system from stable to testing"
+      echo "• Add unstable/experimental repos with proper pinning"
+      echo "• Modernize APT sources format if needed"
+    fi
     echo ""
-    read -p "Run Debian Testing setup? (y/N): " -n 1 -r
+    read -p "Run Debian setup? (y/N): " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
       if [ -f "$SCRIPT_DIR/setup-debian-testing.sh" ]; then
@@ -145,8 +161,7 @@ if [ -f /etc/debian_version ] && [ "$HAS_SUDO" = true ]; then
       fi
     fi
   else
-    echo "Debian $DEBIAN_SUITE detected (not testing)."
-    echo "The Debian Testing setup is available if you upgrade to testing later."
+    echo "Could not determine Debian suite. Manual setup may be required."
   fi
   echo ""
 fi
