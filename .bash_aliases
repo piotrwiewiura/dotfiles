@@ -32,7 +32,7 @@ alias egrep='egrep --color=auto'
 alias df='df -h'            # human readable disk usage
 alias du='du -h'            # human readable directory usage
 alias free='free -h'        # human readable memory usage
-alias psg='ps aux | grep -v grep | grep -i -e VSZ -e' # search processes
+alias psg='ps aux | grep -v grep | grep -i' # search processes
 
 # ============================================================================
 # APT ALIASES
