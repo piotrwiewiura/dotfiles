@@ -136,7 +136,7 @@ if [ -f /etc/debian_version ] && [ "$HAS_SUDO" = true ]; then
   
   # Offer setup for any Debian system (stable or testing)
   if [[ -n "$DEBIAN_SUITE" ]]; then
-    if [[ "$DEBIAN_SUITE" == "testing" || "$DEBIAN_SUITE" == "forky" ]]; then
+    if [[ "$DEBIAN_SUITE" == "testing" ]]; then
       echo "Debian Testing detected!"
       echo "Would you like to set up Debian Testing best practices?"
       echo "This adds unstable/experimental repos with proper pinning for better security updates."
