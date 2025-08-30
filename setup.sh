@@ -144,12 +144,10 @@ link_file .vimrc
 link_file .ls.awk
 link_file .gitconfig
 
-# Create .kube directory if it doesn't exist
-mkdir -p "$HOME/.kube"
-
 # Handle k3s configuration if available
 if [ -f /etc/rancher/k3s/k3s.yaml ] && [ "$HAS_SUDO" = true ]; then
   echo "Setting up k3s kubectl configuration..."
+  mkdir -p "$HOME/.kube"
   sudo cp /etc/rancher/k3s/k3s.yaml "$HOME/.kube/k3s-config"
   sudo chown "$USER:" "$HOME/.kube/k3s-config"
   echo "✓ k3s config copied to ~/.kube/k3s-config"
