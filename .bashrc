@@ -17,6 +17,8 @@ HISTFILESIZE=20000              # increased from 2000
 HISTTIMEFORMAT="%F %T "         # add timestamps to history
 shopt -s histappend             # append to history file, don't overwrite
 shopt -s histverify             # show command before executing from history
+shopt -s histreedit     # re-edit failed history substitutions
+shopt -s cmdhist        # save multi-line commands in one history entry
 
 # ============================================================================
 # SHELL OPTIONS
@@ -100,15 +102,22 @@ export LESS='-R -i -w -M -z-4'
 export EDITOR=vim
 export VISUAL=vim
 
-# Add local bin to PATH if it exists
-if [ -d "$HOME/.local/bin" ]; then
-    PATH="$HOME/.local/bin:$PATH"
-fi
+# ============================================================================
+# PATH CONFIGURATION
+# ============================================================================
 
-# Add user bin to PATH if it exists
-if [ -d "$HOME/bin" ]; then
-    PATH="$HOME/bin:$PATH"
-fi
+# Helper function to add a directory to the PATH if it exists and isn't already there
+path_add() {
+    if [ -d "$1" ] && [[ ":$PATH:" != *":$1:"* ]]; then
+        PATH="$1:$PATH"
+    fi
+}
+
+# Add user-specific bin directories to the front of the PATH
+path_add "$HOME/.local/bin"
+path_add "$HOME/bin"
+
+unset -f path_add # Clean up the function after use
 
 # GPG configuration for interactive shells
 if [ -t 0 ]; then
