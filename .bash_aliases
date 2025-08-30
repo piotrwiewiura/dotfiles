@@ -22,9 +22,6 @@ alias -- -='cd -'           # go back to previous directory
 # ============================================================================
 # SAFETY ALIASES
 # ============================================================================
-alias rm='rm -i'            # prompt before removal
-alias cp='cp -i'            # prompt before overwrite
-alias mv='mv -i'            # prompt before overwrite
 alias mkdir='mkdir -pv'     # create parent directories and be verbose
 
 # ============================================================================
@@ -52,34 +49,7 @@ alias aptse='apt search'
 alias aptsh='apt show'
 alias aptli='apt list --installed'
 alias aptug='apt list --upgradable'
-
-# ============================================================================
-# MODERN TOOL ALIASES (if installed)
-# ============================================================================
-
-# Better cat with syntax highlighting
-if command -v bat >/dev/null 2>&1; then
-    alias cat='bat --paging=never'
-    alias ccat='/bin/cat'   # fallback to original cat
-elif command -v batcat >/dev/null 2>&1; then
-    alias cat='batcat --paging=never'
-    alias ccat='/bin/cat'
-fi
-
-# Better find
-if command -v fd >/dev/null 2>&1; then
-    alias find='fd'
-    alias oldfind='/usr/bin/find'
-elif command -v fdfind >/dev/null 2>&1; then
-    alias find='fdfind'
-    alias oldfind='/usr/bin/find'
-fi
-
-# Better grep
-if command -v rg >/dev/null 2>&1; then
-    alias grep='rg'
-    alias oldgrep='/bin/grep'
-fi
+alias aui='apt-upgrade-info'
 
 # ============================================================================
 # GIT ALIASES
