@@ -121,5 +121,5 @@ fi
 # ============================================================================
 # SSH keychain setup for passwordless git operations
 if command -v keychain >/dev/null 2>&1; then
-    eval $(keychain --eval --quiet --timeout 480 id_ed25519)  # 8 hours
+    eval $(keychain --eval --quiet id_ed25519)
 fi
