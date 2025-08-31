@@ -72,7 +72,7 @@ if [ "$HAS_SUDO" = true ]; then
   sudo apt-get update
   
   # Essential packages
-  ESSENTIAL_PACKAGES="curl git htop vim nano tree unzip"
+  ESSENTIAL_PACKAGES="curl git htop vim nano tree unzip keychain"
   
   # Modern CLI tools (optional but recommended)
   MODERN_TOOLS="bat fd-find ripgrep"

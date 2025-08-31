@@ -117,6 +117,9 @@ if [ -t 0 ]; then
 fi
 
 # ============================================================================
-# GIT CONFIGURATION
+# SSH KEYCHAIN SETUP
 # ============================================================================
-ssh_setup
+# SSH keychain setup for passwordless git operations
+if command -v keychain >/dev/null 2>&1; then
+    eval $(keychain --eval --quiet --timeout 480 id_ed25519)  # 8 hours
+fi
