@@ -117,7 +117,7 @@ EOF
     echo ""
     read -p "Proceed with upgrade? (Y/n): " -n 1 -r
     echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    if [[ ! $REPLY =~ ^[Nn]$ ]]; then
         # Show what will be upgraded
         echo "Packages to be upgraded:"
         apt-get upgrade --dry-run | grep "^Inst" | head -10
@@ -127,9 +127,9 @@ EOF
             echo ""
         fi
         
-        read -p "Proceed with upgrade? (y/N): " -n 1 -r
+        read -p "Proceed with upgrade? (Y/n): " -n 1 -r
         echo
-        if [[ $REPLY =~ ^[Yy]$ ]]; then
+        if [[ ! $REPLY =~ ^[Nn]$ ]]; then
             apt-get upgrade -y
             apt-get full-upgrade -y
             echo "✅ Package upgrade complete!"
