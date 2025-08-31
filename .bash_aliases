@@ -204,3 +204,16 @@ cleanup() {
     sudo apt-get autoclean
     echo "✓ Cleanup complete"
 }
+
+# SSH agent setup for passwordless git operations
+ssh_setup() {
+    # Start ssh-agent if not running
+    if [ -z "$SSH_AUTH_SOCK" ]; then
+        eval "$(ssh-agent -s)" >/dev/null
+    fi
+    
+    # Add key if not already loaded
+    if ! ssh-add -l >/dev/null 2>&1; then
+        ssh-add ~/.ssh/id_ed25519 2>/dev/null || true
+    fi
+}
