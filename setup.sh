@@ -46,9 +46,9 @@ if [ -f /etc/debian_version ] && [ "$HAS_SUDO" = true ]; then
       echo "• Modernize APT sources format if needed"
     fi
     echo ""
-    read -p "Run Debian setup? (y/N): " -n 1 -r
+    read -p "Run Debian setup? (Y/n): " -n 1 -r
     echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
+    if [[ ! $REPLY =~ ^[Nn]$ ]]; then
       if [ -f "$SCRIPT_DIR/setup-debian-testing.sh" ]; then
         echo ""
         sudo "$SCRIPT_DIR/setup-debian-testing.sh"

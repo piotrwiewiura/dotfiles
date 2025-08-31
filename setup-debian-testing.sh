@@ -57,9 +57,9 @@ if [[ "$CURRENT_SUITE" != "testing" ]]; then
     echo "   • You'll get newer software but potentially more bugs"
     echo "   • This is recommended for developers/power users"
     echo ""
-    read -p "Upgrade to testing? (y/N): " -n 1 -r
+    read -p "Upgrade to testing? (Y/n): " -n 1 -r
     echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    if [[ $REPLY =~ ^[Nn]$ ]]; then
         echo "Staying on $CURRENT_SUITE. Exiting."
         exit 0
     fi
@@ -115,9 +115,9 @@ EOF
     echo "📦 Upgrading packages to testing versions..."
     echo "This may take a while and download a lot of data..."
     echo ""
-    read -p "Continue with package upgrade? (y/N): " -n 1 -r
+    read -p "Proceed with upgrade? (Y/n): " -n 1 -r
     echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
         # Show what will be upgraded
         echo "Packages to be upgraded:"
         apt-get upgrade --dry-run | grep "^Inst" | head -10
@@ -154,9 +154,9 @@ echo "• Add unstable and experimental repositories (with lower priority)"
 echo "• Configure APT pinning to prefer testing by default"
 echo "• Set up automatic security updates from unstable for critical packages"
 echo ""
-read -p "Continue? (y/N): " -n 1 -r
+read -p "Continue? (Y/n): " -n 1 -r
 echo
-if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+if [[ $REPLY =~ ^[Nn]$ ]]; then
     echo "Setup cancelled."
     exit 0
 fi
