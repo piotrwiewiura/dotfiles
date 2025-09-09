@@ -75,7 +75,7 @@ if [ "$HAS_SUDO" = true ]; then
   ESSENTIAL_PACKAGES="curl git htop vim nano tree unzip keychain"
   
   # Modern CLI tools (optional but recommended)
-  MODERN_TOOLS="bat fd-find ripgrep"
+  MODERN_TOOLS="bat duf fd-find ripgrep"
   
   # Development tools
   DEV_TOOLS="build-essential wget"
