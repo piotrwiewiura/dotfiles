@@ -140,6 +140,7 @@ link_file() {
 echo "Linking configuration files..."
 link_file .bashrc
 link_file .bash_aliases
+link_file .bash_logout
 link_file .vimrc
 link_file .ls.awk
 link_file .gitconfig
