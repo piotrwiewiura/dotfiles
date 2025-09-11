@@ -6,14 +6,8 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 echo "Setting up dotfiles..."
 
-# Check if user has sudo privileges
-HAS_SUDO=false
-if groups | grep -q sudo; then
-  HAS_SUDO=true
-fi
-
 # Handle Debian Testing upgrade FIRST (before installing packages)
-if [ -f /etc/debian_version ] && [ "$HAS_SUDO" = true ]; then
+if [ -f /etc/debian_version ]; then
   echo "🐧 Debian system detected!"
   echo ""
   
@@ -67,29 +61,25 @@ if [ -f /etc/debian_version ] && [ "$HAS_SUDO" = true ]; then
 fi
 
 # Update package list and install essential tools
-if [ "$HAS_SUDO" = true ]; then
-  echo "Installing packages..."
-  sudo apt-get update
-  
-  # Essential packages
-  ESSENTIAL_PACKAGES="curl wget git htop vim nano tree unzip keychain"
-  
-  # Modern CLI tools (optional but recommended)
-  MODERN_TOOLS="bat duf fd-find ripgrep"
-  
-  echo "Installing essential packages and modern tools..."
-  sudo apt-get install -y $ESSENTIAL_PACKAGES $MODERN_TOOLS
-  
-  # Set up symlinks for modern tools with common names
-  if command -v batcat >/dev/null 2>&1; then
-    sudo ln -sf /usr/bin/batcat /usr/local/bin/bat 2>/dev/null || true
-  fi
-  
-  if command -v fdfind >/dev/null 2>&1; then
-    sudo ln -sf /usr/bin/fdfind /usr/local/bin/fd 2>/dev/null || true
-  fi
-else
-  echo "⚠ No sudo privileges detected. Skipping package installation."
+echo "Installing packages..."
+sudo apt-get update
+
+# Essential packages
+ESSENTIAL_PACKAGES="curl wget git htop vim nano tree unzip keychain"
+
+# Modern CLI tools (optional but recommended)
+MODERN_TOOLS="bat duf fd-find ripgrep"
+
+echo "Installing essential packages and modern tools..."
+sudo apt-get install -y $ESSENTIAL_PACKAGES $MODERN_TOOLS
+
+# Set up symlinks for modern tools with common names
+if command -v batcat >/dev/null 2>&1; then
+  sudo ln -sf /usr/bin/batcat /usr/local/bin/bat 2>/dev/null || true
+fi
+
+if command -v fdfind >/dev/null 2>&1; then
+  sudo ln -sf /usr/bin/fdfind /usr/local/bin/fd 2>/dev/null || true
 fi
 
 # Create backup directory for original configs
@@ -130,7 +120,7 @@ link_file .ls.awk
 link_file .gitconfig
 
 # Handle k3s configuration if available
-if [ -f /etc/rancher/k3s/k3s.yaml ] && [ "$HAS_SUDO" = true ]; then
+if [ -f /etc/rancher/k3s/k3s.yaml ]; then
   echo "Setting up k3s kubectl configuration..."
   mkdir -p "$HOME/.kube"
   sudo cp /etc/rancher/k3s/k3s.yaml "$HOME/.kube/k3s-config"
