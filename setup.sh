@@ -72,14 +72,11 @@ if [ "$HAS_SUDO" = true ]; then
   sudo apt-get update
   
   # Essential packages
-  ESSENTIAL_PACKAGES="curl git htop vim nano tree unzip keychain"
+  ESSENTIAL_PACKAGES="curl wget git htop vim nano tree unzip keychain"
   
   # Modern CLI tools (optional but recommended)
   MODERN_TOOLS="bat duf fd-find ripgrep"
-  
-  # Development tools
-  DEV_TOOLS="build-essential wget"
-  
+    
   echo "Installing essential packages..."
   sudo apt-get install -y $ESSENTIAL_PACKAGES
   
@@ -92,9 +89,6 @@ if [ "$HAS_SUDO" = true ]; then
       echo "⚠ Could not install $tool (not available or failed)"
     fi
   done
-  
-  echo "Installing development tools..."
-  sudo apt-get install -y $DEV_TOOLS
   
   # Set up symlinks for modern tools with common names
   if command -v batcat >/dev/null 2>&1; then
