@@ -136,11 +136,17 @@ l() {
 
 # Kubernetes shortcuts
 if command -v kubectl >/dev/null 2>&1; then
+    # Set alias for kubectl
     alias k='kubectl'
-    complete -F __start_kubectl k
+
+    # Enable kubectl bash completion
+    source <(kubectl completion bash)
+
+    # Associate the completion logic with the 'k' alias
+    complete -o default -F __start_kubectl k
     
-  # set the copied k3s config as KUBECONFIG, so that sudo is not necessary to run kubectl
-  # see https://github.com/k3s-io/k3s/issues/389#issuecomment-745808339
+    # set the copied k3s config as KUBECONFIG, so that sudo is not necessary to run kubectl
+    # see https://github.com/k3s-io/k3s/issues/389#issuecomment-745808339
     export KUBECONFIG=~/.kube/k3s-config
 fi
 
