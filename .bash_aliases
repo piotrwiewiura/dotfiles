@@ -37,7 +37,7 @@ alias psg='ps aux | grep -v grep | grep -i' # search processes
 # ============================================================================
 # APT ALIASES
 # ============================================================================
-alias aptup='sudo apt update && sudo apt upgrade'
+alias aptup='sudo apt update && sudo apt full-upgrade'
 alias aptin='sudo apt install'
 alias aptse='apt search'
 alias aptsh='apt show'
