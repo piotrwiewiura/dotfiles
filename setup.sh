@@ -89,48 +89,82 @@ if [ "$IS_RASPBERRY_PI" = true ]; then
   if [[ -n "$CURRENT_CODENAME" ]]; then
     echo "Current Raspberry Pi OS: $CURRENT_CODENAME ($SOURCES_FORMAT format)"
     
-    # Check if we need to update sources by querying the repository
+    # Check for latest stable and testing Raspberry Pi OS versions
     echo "Checking for latest stable Raspberry Pi OS version..."
     
-    # For 64-bit (uses debian repos)
+    LATEST_STABLE=""
+    LATEST_TESTING=""
+    
+    # Check what Raspberry Pi OS officially supports
+    # For 64-bit (uses debian repos BUT through Raspberry Pi repos)
     if [ -f /etc/apt/sources.list.d/debian.sources ]; then
-      LATEST_CODENAME=$(curl -s http://deb.debian.org/debian/dists/stable/Release 2>/dev/null | grep "^Codename:" | awk '{print $2}' || echo "")
+      # Check Raspberry Pi's debian-based repo, not upstream Debian
+      LATEST_STABLE=$(curl -s http://archive.raspberrypi.com/debian/dists/stable/Release 2>/dev/null | grep "^Codename:" | awk '{print $2}' || echo "")
+      LATEST_TESTING=$(curl -s http://archive.raspberrypi.com/debian/dists/testing/Release 2>/dev/null | grep "^Codename:" | awk '{print $2}' || echo "")
     # For 32-bit (uses raspbian repos)
     elif [ -f /etc/apt/sources.list.d/raspbian.sources ]; then
-      LATEST_CODENAME=$(curl -s http://raspbian.raspberrypi.org/raspbian/dists/stable/Release 2>/dev/null | grep "^Codename:" | awk '{print $2}' || echo "")
+      LATEST_STABLE=$(curl -s http://raspbian.raspberrypi.com/raspbian/dists/stable/Release 2>/dev/null | grep "^Codename:" | awk '{print $2}' || echo "")
+      LATEST_TESTING=$(curl -s http://raspbian.raspberrypi.com/raspbian/dists/testing/Release 2>/dev/null | grep "^Codename:" | awk '{print $2}' || echo "")
     # Legacy format
-    elif grep -q "raspbian.raspberrypi.org" /etc/apt/sources.list 2>/dev/null; then
-      LATEST_CODENAME=$(curl -s http://raspbian.raspberrypi.org/raspbian/dists/stable/Release 2>/dev/null | grep "^Codename:" | awk '{print $2}' || echo "")
+    elif grep -q "raspbian.raspberrypi" /etc/apt/sources.list 2>/dev/null; then
+      LATEST_STABLE=$(curl -s http://raspbian.raspberrypi.com/raspbian/dists/stable/Release 2>/dev/null | grep "^Codename:" | awk '{print $2}' || echo "")
+      LATEST_TESTING=$(curl -s http://raspbian.raspberrypi.com/raspbian/dists/testing/Release 2>/dev/null | grep "^Codename:" | awk '{print $2}' || echo "")
     else
-      LATEST_CODENAME=$(curl -s http://deb.debian.org/debian/dists/stable/Release 2>/dev/null | grep "^Codename:" | awk '{print $2}' || echo "")
+      # Fallback to checking archive.raspberrypi.com
+      LATEST_STABLE=$(curl -s http://archive.raspberrypi.com/debian/dists/stable/Release 2>/dev/null | grep "^Codename:" | awk '{print $2}' || echo "")
+      LATEST_TESTING=$(curl -s http://archive.raspberrypi.com/debian/dists/testing/Release 2>/dev/null | grep "^Codename:" | awk '{print $2}' || echo "")
     fi
     
-    if [[ -n "$LATEST_CODENAME" ]] && [[ "$LATEST_CODENAME" != "$CURRENT_CODENAME" ]]; then
-      echo "⚠️  Latest stable: $LATEST_CODENAME (you have: $CURRENT_CODENAME)"
-      echo ""
-      echo "Would you like to update your sources to $LATEST_CODENAME?"
-      echo "Note: This only updates repository sources, not packages."
-      echo "After updating sources, you can upgrade packages with 'sudo apt full-upgrade'"
-      echo ""
-      read -p "Update sources to $LATEST_CODENAME? (y/N): " -n 1 -r
-      echo
-      if [[ $REPLY =~ ^[Yy]$ ]]; then
-        echo "Updating sources to $LATEST_CODENAME..."
-        
-        # Update based on format
-        if [ "$SOURCES_FORMAT" = "modern" ]; then
-          # Update DEB822 format files
-          sudo find /etc/apt/sources.list.d -name "*.sources" -exec sed -i "s/Suites: $CURRENT_CODENAME/Suites: $LATEST_CODENAME/g" {} \;
-        else
-          # Update legacy format
-          sudo sed -i "s/$CURRENT_CODENAME/$LATEST_CODENAME/g" /etc/apt/sources.list
-          if [ -f /etc/apt/sources.list.d/raspi.list ]; then
-            sudo sed -i "s/$CURRENT_CODENAME/$LATEST_CODENAME/g" /etc/apt/sources.list.d/raspi.list
-          fi
+    # Check if user is on testing - if so, don't suggest downgrade
+    if [[ "$CURRENT_CODENAME" == "$LATEST_TESTING" ]]; then
+      echo "✓ Already on testing: $CURRENT_CODENAME"
+    elif [[ -n "$LATEST_STABLE" ]] && [[ "$LATEST_STABLE" != "$CURRENT_CODENAME" ]]; then
+      # User is on stable but there's a newer stable available
+      # Verify the target suite actually exists before offering upgrade
+      SUITE_EXISTS=false
+      
+      if [ -f /etc/apt/sources.list.d/raspbian.sources ] || grep -q "raspbian.raspberrypi" /etc/apt/sources.list 2>/dev/null; then
+        # Check Raspbian repo
+        if curl -s -f -I "http://raspbian.raspberrypi.com/raspbian/dists/$LATEST_STABLE/Release" >/dev/null 2>&1; then
+          SUITE_EXISTS=true
         fi
-        
-        echo "✓ Sources updated to $LATEST_CODENAME"
-        sudo apt-get update
+      else
+        # Check Raspberry Pi debian repo
+        if curl -s -f -I "http://archive.raspberrypi.com/debian/dists/$LATEST_STABLE/Release" >/dev/null 2>&1; then
+          SUITE_EXISTS=true
+        fi
+      fi
+      
+      if [ "$SUITE_EXISTS" = true ]; then
+        echo "⚠️  Latest stable: $LATEST_STABLE (you have: $CURRENT_CODENAME)"
+        echo ""
+        echo "Would you like to update your sources to $LATEST_STABLE?"
+        echo "Note: This only updates repository sources, not packages."
+        echo "After updating sources, you can upgrade packages with 'sudo apt full-upgrade'"
+        echo ""
+        read -p "Update sources to $LATEST_STABLE? (y/N): " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+          echo "Updating sources to $LATEST_STABLE..."
+          
+          # Update based on format
+          if [ "$SOURCES_FORMAT" = "modern" ]; then
+            # Update DEB822 format files
+            sudo find /etc/apt/sources.list.d -name "*.sources" -exec sed -i "s/Suites: $CURRENT_CODENAME/Suites: $LATEST_STABLE/g" {} \;
+          else
+            # Update legacy format
+            sudo sed -i "s/$CURRENT_CODENAME/$LATEST_STABLE/g" /etc/apt/sources.list
+            if [ -f /etc/apt/sources.list.d/raspi.list ]; then
+              sudo sed -i "s/$CURRENT_CODENAME/$LATEST_STABLE/g" /etc/apt/sources.list.d/raspi.list
+            fi
+          fi
+          
+          echo "✓ Sources updated to $LATEST_STABLE"
+          sudo apt-get update
+        fi
+      else
+        echo "✓ Already on latest available: $CURRENT_CODENAME"
+        echo "  (Newer release $LATEST_STABLE not yet available for Raspberry Pi OS)"
       fi
     else
       echo "✓ Already on latest stable: $CURRENT_CODENAME"
