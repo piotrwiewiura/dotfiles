@@ -209,18 +209,28 @@ link_file() {
     return
   fi
   
-  if [ ! -L "$DEST_FILE" ]; then
-    # Backup existing file if it exists and isn't already a symlink
-    if [ -f "$DEST_FILE" ]; then
-      echo "Backing up existing $1 to $CONFIGS_ORIG"
-      mv "$DEST_FILE" "$CONFIGS_ORIG"
+  # Check if destination exists
+  if [ -e "$DEST_FILE" ] || [ -L "$DEST_FILE" ]; then
+    # If it's already a symlink pointing to the correct location, skip
+    if [ -L "$DEST_FILE" ] && [ "$(readlink -f "$DEST_FILE")" = "$(readlink -f "$SOURCE_FILE")" ]; then
+      echo "✓ $1 already correctly linked"
+      return
     fi
     
-    echo "Linking $1"
-    ln -s "$SOURCE_FILE" "$DEST_FILE"
-  else
-    echo "✓ $1 already linked"
+    # Otherwise, backup and relink
+    if [ ! -L "$DEST_FILE" ]; then
+      # It's a real file, back it up
+      echo "Backing up existing $1 to $CONFIGS_ORIG"
+      mv "$DEST_FILE" "$CONFIGS_ORIG"
+    else
+      # It's a symlink pointing elsewhere, just remove it
+      echo "Removing old symlink for $1 (was pointing to $(readlink "$DEST_FILE"))"
+      rm "$DEST_FILE"
+    fi
   fi
+  
+  echo "Linking $1"
+  ln -s "$SOURCE_FILE" "$DEST_FILE"
 }
 
 # Link configuration files
