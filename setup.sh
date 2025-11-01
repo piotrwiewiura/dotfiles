@@ -6,8 +6,17 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 echo "Setting up dotfiles..."
 
+# Detect if running on Raspberry Pi OS
+IS_RASPBERRY_PI=false
+if [ -f /etc/rpi-issue ]; then
+  IS_RASPBERRY_PI=true
+  echo "🥧 Raspberry Pi OS detected!"
+  echo ""
+fi
+
 # Handle Debian Testing upgrade FIRST (before installing packages)
-if [ -f /etc/debian_version ]; then
+# Skip this entirely for Raspberry Pi OS
+if [ -f /etc/debian_version ] && [ "$IS_RASPBERRY_PI" = false ]; then
   echo "🐧 Debian system detected!"
   echo ""
   
@@ -56,6 +65,76 @@ if [ -f /etc/debian_version ]; then
     fi
   else
     echo "Could not determine Debian suite. Manual setup may be required."
+  fi
+  echo ""
+fi
+
+# For Raspberry Pi OS, check if sources need updating to latest stable
+if [ "$IS_RASPBERRY_PI" = true ]; then
+  echo "Checking Raspberry Pi OS version..."
+  
+  # Determine current codename
+  CURRENT_CODENAME=""
+  if [ -f /etc/os-release ]; then
+    CURRENT_CODENAME=$(grep "^VERSION_CODENAME=" /etc/os-release 2>/dev/null | cut -d'=' -f2)
+  fi
+  
+  # Determine what sources files exist (DEB822 or legacy)
+  if [ -f /etc/apt/sources.list.d/debian.sources ] || [ -f /etc/apt/sources.list.d/raspbian.sources ]; then
+    SOURCES_FORMAT="modern"
+  else
+    SOURCES_FORMAT="legacy"
+  fi
+  
+  if [[ -n "$CURRENT_CODENAME" ]]; then
+    echo "Current Raspberry Pi OS: $CURRENT_CODENAME ($SOURCES_FORMAT format)"
+    
+    # Check if we need to update sources by querying the repository
+    echo "Checking for latest stable Raspberry Pi OS version..."
+    
+    # For 64-bit (uses debian repos)
+    if [ -f /etc/apt/sources.list.d/debian.sources ]; then
+      LATEST_CODENAME=$(curl -s http://deb.debian.org/debian/dists/stable/Release 2>/dev/null | grep "^Codename:" | awk '{print $2}' || echo "")
+    # For 32-bit (uses raspbian repos)
+    elif [ -f /etc/apt/sources.list.d/raspbian.sources ]; then
+      LATEST_CODENAME=$(curl -s http://raspbian.raspberrypi.org/raspbian/dists/stable/Release 2>/dev/null | grep "^Codename:" | awk '{print $2}' || echo "")
+    # Legacy format
+    elif grep -q "raspbian.raspberrypi.org" /etc/apt/sources.list 2>/dev/null; then
+      LATEST_CODENAME=$(curl -s http://raspbian.raspberrypi.org/raspbian/dists/stable/Release 2>/dev/null | grep "^Codename:" | awk '{print $2}' || echo "")
+    else
+      LATEST_CODENAME=$(curl -s http://deb.debian.org/debian/dists/stable/Release 2>/dev/null | grep "^Codename:" | awk '{print $2}' || echo "")
+    fi
+    
+    if [[ -n "$LATEST_CODENAME" ]] && [[ "$LATEST_CODENAME" != "$CURRENT_CODENAME" ]]; then
+      echo "⚠️  Latest stable: $LATEST_CODENAME (you have: $CURRENT_CODENAME)"
+      echo ""
+      echo "Would you like to update your sources to $LATEST_CODENAME?"
+      echo "Note: This only updates repository sources, not packages."
+      echo "After updating sources, you can upgrade packages with 'sudo apt full-upgrade'"
+      echo ""
+      read -p "Update sources to $LATEST_CODENAME? (y/N): " -n 1 -r
+      echo
+      if [[ $REPLY =~ ^[Yy]$ ]]; then
+        echo "Updating sources to $LATEST_CODENAME..."
+        
+        # Update based on format
+        if [ "$SOURCES_FORMAT" = "modern" ]; then
+          # Update DEB822 format files
+          sudo find /etc/apt/sources.list.d -name "*.sources" -exec sed -i "s/Suites: $CURRENT_CODENAME/Suites: $LATEST_CODENAME/g" {} \;
+        else
+          # Update legacy format
+          sudo sed -i "s/$CURRENT_CODENAME/$LATEST_CODENAME/g" /etc/apt/sources.list
+          if [ -f /etc/apt/sources.list.d/raspi.list ]; then
+            sudo sed -i "s/$CURRENT_CODENAME/$LATEST_CODENAME/g" /etc/apt/sources.list.d/raspi.list
+          fi
+        fi
+        
+        echo "✓ Sources updated to $LATEST_CODENAME"
+        sudo apt-get update
+      fi
+    else
+      echo "✓ Already on latest stable: $CURRENT_CODENAME"
+    fi
   fi
   echo ""
 fi
@@ -140,6 +219,12 @@ fi
 
 echo ""
 echo "🎉 Setup complete!"
+echo ""
+if [ "$IS_RASPBERRY_PI" = true ]; then
+  echo "Raspberry Pi OS configuration applied successfully!"
+else
+  echo "Debian configuration applied successfully!"
+fi
 echo ""
 echo "Next steps:"
 echo "1. Restart your terminal or run: source ~/.bashrc"

@@ -1,6 +1,7 @@
 #!/bin/bash
 # system-cleanup.sh - Find and remove orphaned/unused packages
 # Based on cleanup methodology developed through hands-on analysis
+# Now with Raspberry Pi OS support
 
 set -e
 
@@ -11,7 +12,16 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# Detect if running on Raspberry Pi OS
+IS_RASPBERRY_PI=false
+if [ -f /etc/rpi-issue ]; then
+  IS_RASPBERRY_PI=true
+fi
+
 echo -e "${BLUE}=== System Cleanup Analysis ===${NC}"
+if [ "$IS_RASPBERRY_PI" = true ]; then
+  echo -e "${GREEN}Running on Raspberry Pi OS${NC}"
+fi
 echo ""
 
 # Function to print colored headers
@@ -108,10 +118,19 @@ echo ""
 # 6. Suggest cleanup commands
 print_header "Suggested Cleanup Commands"
 
-echo "1. Remove old kernels (keep current + 1 backup):"
-dpkg -l | grep linux-image | grep "^ii" | grep -v "$CURRENT_KERNEL" | grep -v "linux-image-amd64" | head -n -1 | awk '{print $2}' | while read kernel; do
-    echo "   sudo apt remove $kernel"
-done
+# For Raspberry Pi, be more conservative with kernel removal
+if [ "$IS_RASPBERRY_PI" = true ]; then
+    echo "1. Raspberry Pi kernel cleanup (keep current + 1 backup):"
+    echo "   Note: Raspberry Pi uses custom kernels, be cautious"
+    dpkg -l | grep linux-image | grep "^ii" | grep -v "$CURRENT_KERNEL" | grep -v "linux-image-" | head -n -1 | awk '{print $2}' | while read kernel; do
+        echo "   sudo apt remove $kernel"
+    done
+else
+    echo "1. Remove old kernels (keep current + 1 backup):"
+    dpkg -l | grep linux-image | grep "^ii" | grep -v "$CURRENT_KERNEL" | grep -v "linux-image-amd64" | head -n -1 | awk '{print $2}' | while read kernel; do
+        echo "   sudo apt remove $kernel"
+    done
+fi
 
 echo ""
 echo "2. Clean up removed package configs:"
@@ -138,8 +157,13 @@ fi
 
 echo ""
 if [[ "$KEEP_HEADERS" == "false" ]]; then
-    echo "5. Remove kernel headers (safe - no DKMS):"
-    echo "   sudo apt remove linux-headers-*"
+    if [ "$IS_RASPBERRY_PI" = true ]; then
+        echo "5. Remove Raspberry Pi kernel headers (safe - no DKMS):"
+        echo "   sudo apt remove raspberrypi-kernel-headers"
+    else
+        echo "5. Remove kernel headers (safe - no DKMS):"
+        echo "   sudo apt remove linux-headers-*"
+    fi
 else
     print_warning "5. Keep kernel headers (DKMS modules present)"
 fi
@@ -148,8 +172,10 @@ echo ""
 print_header "Prevention Tips"
 echo "• Use 'sudo apt full-upgrade' instead of 'sudo apt upgrade'"
 echo "• Run 'sudo apt autoremove --purge' after updates"
-echo "• Configure automatic kernel cleanup:"
-echo "  echo 'APT::AutoRemove::KernelsKeep \"2\";' | sudo tee /etc/apt/apt.conf.d/01autoremove-kernels"
+if [ "$IS_RASPBERRY_PI" = false ]; then
+    echo "• Configure automatic kernel cleanup:"
+    echo "  echo 'APT::AutoRemove::KernelsKeep \"2\";' | sudo tee /etc/apt/apt.conf.d/01autoremove-kernels"
+fi
 echo ""
 echo "• Monthly check with this script to catch accumulation early"
 
@@ -184,3 +210,7 @@ echo ""
 print_header "Cleanup Complete"
 echo "For more aggressive cleanup, review the suggested commands above."
 echo "Always verify what will be removed before proceeding with manual removals."
+if [ "$IS_RASPBERRY_PI" = true ]; then
+    echo ""
+    echo "Note: Raspberry Pi uses custom kernels - be especially careful with kernel packages."
+fi
