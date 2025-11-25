@@ -66,16 +66,19 @@ if [[ "$CURRENT_SUITE" != "testing" ]]; then
         # Backup original sources.list
         cp /etc/apt/sources.list /etc/apt/sources.list.backup
         
+        # Backup existing debian.sources if it exists (shouldn't, but safety first)
+        if [ -f /etc/apt/sources.list.d/debian.sources ]; then
+            cp /etc/apt/sources.list.d/debian.sources /etc/apt/sources.list.d/debian.sources.backup
+        fi
+        
         # Create modern debian.sources file
         cat > /etc/apt/sources.list.d/debian.sources << 'EOF'
-# Modernized from /etc/apt/sources.list
 Types: deb deb-src
 URIs: http://deb.debian.org/debian/
 Suites: testing
 Components: main contrib non-free non-free-firmware
 Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
 
-# Modernized from /etc/apt/sources.list
 Types: deb deb-src
 URIs: http://security.debian.org/debian-security/
 Suites: testing-security
@@ -92,13 +95,18 @@ EOF
         # Modern format - update to testing while preserving security suffix
         echo "📝 Updating existing modern sources to testing..."
         
-        # Update main repositories (not security)
-        sed -i '/security/!s/^Suites: .*/Suites: testing/' /etc/apt/sources.list.d/debian.sources
+        # Backup current file
+        cp /etc/apt/sources.list.d/debian.sources /etc/apt/sources.list.d/debian.sources.backup
         
-        # Update security repositories specifically
-        sed -i 's/^Suites: .*-security$/Suites: testing-security/' /etc/apt/sources.list.d/debian.sources
+        # Use more precise sed targeting - only change Suite lines
+        # First, update non-security suites to testing
+        sed -i '/^Types:/,/^$/{/^Suites:/{/security/!s/.*/Suites: testing/}}' /etc/apt/sources.list.d/debian.sources
+        
+        # Then, update security suites to testing-security
+        sed -i '/^Types:/,/^$/{/^Suites:.*security/s/.*/Suites: testing-security/}' /etc/apt/sources.list.d/debian.sources
         
         echo "✓ Updated existing sources to testing"
+        echo "✓ Backup saved to debian.sources.backup"
     fi
     
     echo ""
