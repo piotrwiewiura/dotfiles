@@ -37,7 +37,7 @@ alias psg='ps aux | grep -v grep | grep -i' # search processes
 # ============================================================================
 # APT ALIASES
 # ============================================================================
-alias aptup='sudo apt update && sudo apt full-upgrade'
+# Note: aptup is now a function (see UTILITY FUNCTIONS section)
 alias aptin='sudo apt install'
 alias aptse='apt search'
 alias aptsh='apt show'
@@ -132,6 +132,86 @@ h() {
 # and https://stackoverflow.com/a/51141872/2271042
 l() {
     ls -Ahl --color=always $* | awk -f ~/.ls.awk; 
+}
+
+# Smart apt upgrade with Btrfs snapshot
+# Replaces the simple 'aptup' alias with snapshot protection
+aptup() {
+    echo "Checking for updates..."
+    sudo apt update
+
+    # Check if any upgrades are available
+    UPGRADABLE=$(apt list --upgradable 2>/dev/null | grep -v "Listing" | wc -l)
+    
+    if [ "$UPGRADABLE" -eq 0 ]; then
+        echo "All packages are up to date."
+        return 0
+    fi
+
+    echo ""
+    echo "═══════════════════════════════════════════════════════════"
+    echo "$UPGRADABLE package(s) available for upgrade:"
+    echo "═══════════════════════════════════════════════════════════"
+    apt list --upgradable 2>/dev/null | grep -v "Listing"
+    echo "═══════════════════════════════════════════════════════════"
+    echo ""
+    
+    # Ask for confirmation (as regular user, no sudo)
+    read -p "Proceed with upgrade? [y/N] " -n 1 -r
+    echo ""
+    
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "Upgrade cancelled."
+        return 0
+    fi
+
+    # Track if snapshot was created
+    SNAPSHOT_CREATED=false
+
+    # Create snapshot if snapper is available
+    if command -v snapper &> /dev/null; then
+        echo ""
+        echo "Creating pre-upgrade snapshot..."
+        SNAPSHOT_DESC="Before upgrade: $UPGRADABLE packages"
+        sudo snapper -c root create --description "$SNAPSHOT_DESC" > /dev/null 2>&1
+        if [ $? -eq 0 ]; then
+            echo "✓ Snapshot created: $SNAPSHOT_DESC"
+            SNAPSHOT_CREATED=true
+        else
+            echo "✗ Snapshot creation failed!"
+            echo ""
+            read -p "Continue with upgrade anyway (NOT RECOMMENDED)? [y/N] " -n 1 -r
+            echo ""
+            if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+                echo "Upgrade cancelled for safety."
+                return 0
+            fi
+            echo "⚠ Proceeding without snapshot..."
+        fi
+    fi
+
+    echo ""
+    echo "Running upgrade..."
+    echo "═══════════════════════════════════════════════════════════"
+    sudo apt full-upgrade -y
+
+    if [ $? -eq 0 ]; then
+        echo ""
+        echo "✓ Upgrade completed successfully"
+        
+        # Only show rollback instructions if snapshot was actually created
+        if [ "$SNAPSHOT_CREATED" = true ]; then
+            echo ""
+            echo "If something breaks, rollback with:"
+            echo "  sudo snapper -c root list"
+            echo "  sudo snapper -c root rollback"
+            echo "  reboot"
+        fi
+    else
+        echo ""
+        echo "✗ Upgrade failed - check errors above"
+        return 1
+    fi
 }
 
 # Kubernetes shortcuts
