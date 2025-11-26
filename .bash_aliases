@@ -144,7 +144,6 @@ aptup() {
     UPGRADABLE=$(apt list --upgradable 2>/dev/null | grep -v "Listing" | wc -l)
     
     if [ "$UPGRADABLE" -eq 0 ]; then
-        echo "All packages are up to date."
         return 0
     fi
 
