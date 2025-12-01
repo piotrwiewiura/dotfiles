@@ -229,10 +229,11 @@ if command -v kubectl >/dev/null 2>&1; then
     complete -o default -F __start_kubectl k
 fi
 
-# Package upgrade information function with optional changelog
-# Usage: apt-upgrade-info [-c|--changelog] [package_filter]
+# Package upgrade information function with optional changelog and description
+# Usage: apt-upgrade-info [-c|--changelog] [-d|--description] [package_filter]
 apt-upgrade-info() {
     local show_changelog=false
+    local show_description=false
     local pkg_filter=""
     
     # Parse arguments
@@ -240,6 +241,10 @@ apt-upgrade-info() {
         case "$1" in
             -c|--changelog)
                 show_changelog=true
+                shift
+                ;;
+            -d|--description)
+                show_description=true
                 shift
                 ;;
             *)
@@ -289,18 +294,20 @@ apt-upgrade-info() {
         local new_version=$(apt list --upgradable 2>/dev/null | grep "^$pkg/" | cut -d' ' -f2)
         
         if [[ -z "$current_version" ]]; then
-            output+="${MAGENTA}Installing:${NC} ${GREEN}$new_version${NC}\n\n"
+            output+="${MAGENTA}Installing:${NC} ${GREEN}$new_version${NC}\n"
         else
-            output+="${YELLOW}Upgrading:${NC} ${RED}$current_version${NC} ${CYAN}→${NC} ${GREEN}$new_version${NC}\n\n"
+            output+="${YELLOW}Upgrading:${NC} ${RED}$current_version${NC} ${CYAN}→${NC} ${GREEN}$new_version${NC}\n"
         fi
         
-        # Get full description with colored first line
-        local description=$(apt-cache show "$pkg" 2>/dev/null | sed -n '/^Description-en:/,/^[^ ]/p' | sed '$d' | sed 's/^Description-en: //' | sed 's/^ //')
-        local first_line=$(echo "$description" | head -n1)
-        local rest_lines=$(echo "$description" | tail -n +2)
-        
-        output+="${CYAN}$first_line${NC}\n"
-        output+="$rest_lines\n"
+        # Show description if requested
+        if [[ "$show_description" == true ]]; then
+            local description=$(apt-cache show "$pkg" 2>/dev/null | sed -n '/^Description-en:/,/^[^ ]/p' | sed '$d' | sed 's/^Description-en: //' | sed 's/^ //')
+            local first_line=$(echo "$description" | head -n1)
+            local rest_lines=$(echo "$description" | tail -n +2)
+            
+            output+="\n${CYAN}$first_line${NC}\n"
+            output+="$rest_lines\n"
+        fi
         
         # Show changelog if requested and this is an upgrade (not new install)
         if [[ "$show_changelog" == true && -n "$current_version" ]]; then
@@ -356,7 +363,9 @@ apt-upgrade-info() {
 }
 
 alias aui='apt-upgrade-info'
+alias auid='apt-upgrade-info -d'
 alias auic='apt-upgrade-info -c'
+alias auicd='apt-upgrade-info -c -d'
 
 cleanup() {
     echo "Cleaning package cache..."
