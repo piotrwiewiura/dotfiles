@@ -229,10 +229,38 @@ if command -v kubectl >/dev/null 2>&1; then
     complete -o default -F __start_kubectl k
 fi
 
-# Package upgrade information function
+# Package upgrade information function with optional changelog
+# Usage: apt-upgrade-info [-c|--changelog] [package_filter]
 apt-upgrade-info() {
+    local show_changelog=false
+    local pkg_filter=""
+    
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -c|--changelog)
+                show_changelog=true
+                shift
+                ;;
+            *)
+                pkg_filter="$1"
+                shift
+                ;;
+        esac
+    done
+    
     local output=""
     local count=0
+    
+    # Color codes
+    local BRIGHT_BLUE='\033[1;94m'
+    local GREEN='\033[1;32m'
+    local YELLOW='\033[1;33m'
+    local CYAN='\033[1;36m'
+    local RED='\033[1;31m'
+    local MAGENTA='\033[1;35m'
+    local DIM='\033[2m'
+    local NC='\033[0m'
     
     # Check if there are any upgradable packages first
     if ! apt list --upgradable 2>/dev/null | grep -q '^[^W]'; then
@@ -240,41 +268,87 @@ apt-upgrade-info() {
         return 0
     fi
     
-    for pkg in $(apt list --upgradable 2>/dev/null | tail -n +2 | cut -d'/' -f1); do
-        # Color codes (using local to avoid polluting environment)
-        local BRIGHT_BLUE='\033[1;94m'
-        local GREEN='\033[1;32m'
-        local YELLOW='\033[1;33m'
-        local CYAN='\033[1;36m'
-        local RED='\033[1;31m'
-        local MAGENTA='\033[1;35m'
-        local NC='\033[0m' # No Color
-        
+    # Get list of upgradable packages, optionally filtered
+    local pkg_list
+    if [[ -n "$pkg_filter" ]]; then
+        pkg_list=$(apt list --upgradable 2>/dev/null | tail -n +2 | cut -d'/' -f1 | grep -i "$pkg_filter")
+    else
+        pkg_list=$(apt list --upgradable 2>/dev/null | tail -n +2 | cut -d'/' -f1)
+    fi
+    
+    if [[ -z "$pkg_list" ]]; then
+        echo "No matching packages found."
+        return 0
+    fi
+    
+    for pkg in $pkg_list; do
         output+="\n${BRIGHT_BLUE}=== $pkg ===${NC}\n"
         
         # Get current and new versions
         local current_version=$(dpkg -l 2>/dev/null | grep "^ii  $pkg " | awk '{print $3}')
         local new_version=$(apt list --upgradable 2>/dev/null | grep "^$pkg/" | cut -d' ' -f2)
         
-        if [ -z "$current_version" ]; then
+        if [[ -z "$current_version" ]]; then
             output+="${MAGENTA}Installing:${NC} ${GREEN}$new_version${NC}\n\n"
         else
             output+="${YELLOW}Upgrading:${NC} ${RED}$current_version${NC} ${CYAN}→${NC} ${GREEN}$new_version${NC}\n\n"
         fi
         
         # Get full description with colored first line
-        local description=$(apt-cache show $pkg 2>/dev/null | sed -n '/^Description-en:/,/^[^ ]/p' | sed '$d' | sed 's/^Description-en: //' | sed 's/^ //')
+        local description=$(apt-cache show "$pkg" 2>/dev/null | sed -n '/^Description-en:/,/^[^ ]/p' | sed '$d' | sed 's/^Description-en: //' | sed 's/^ //')
         local first_line=$(echo "$description" | head -n1)
         local rest_lines=$(echo "$description" | tail -n +2)
         
         output+="${CYAN}$first_line${NC}\n"
-        output+="$rest_lines\n\n"
+        output+="$rest_lines\n"
         
+        # Show changelog if requested and this is an upgrade (not new install)
+        if [[ "$show_changelog" == true && -n "$current_version" ]]; then
+            output+="\n${MAGENTA}Changelog:${NC}\n"
+            
+            # Fetch changelog and extract entries between versions
+            # Format: package (version) distribution; urgency=...
+            local changelog
+            changelog=$(apt changelog "$pkg" 2>/dev/null | awk -v new="$new_version" -v cur="$current_version" '
+                BEGIN { printing = 0 }
+                # Match version header lines: package (version) distribution; urgency=...
+                /^[^ ]+ \([^)]+\)/ {
+                    # Extract version: find ( and ), take content between
+                    start = index($0, "(")
+                    end = index($0, ")")
+                    if (start > 0 && end > start) {
+                        ver = substr($0, start + 1, end - start - 1)
+                        
+                        if (ver == new) {
+                            printing = 1
+                        }
+                        if (ver == cur) {
+                            printing = 0
+                            exit
+                        }
+                    }
+                }
+                printing { print }
+            ')
+            
+            if [[ -n "$changelog" ]]; then
+                # Indent and dim the changelog, limit to reasonable length
+                output+="${DIM}$(echo "$changelog" | head -50 | sed 's/^/  /')${NC}\n"
+                local total_lines=$(echo "$changelog" | wc -l)
+                if [[ $total_lines -gt 50 ]]; then
+                    output+="  ${DIM}... ($(($total_lines - 50)) more lines, use 'apt changelog $pkg' for full)${NC}\n"
+                fi
+            else
+                output+="  ${DIM}(changelog not available or versions not found)${NC}\n"
+            fi
+        fi
+        
+        output+="\n"
         ((count++))
     done
     
     # Use less if more than 5 packages, otherwise print directly
-    if [ $count -gt 5 ]; then
+    if [[ $count -gt 5 ]]; then
         echo -e "$output" | less -R
     else
         echo -e "$output"
@@ -282,6 +356,7 @@ apt-upgrade-info() {
 }
 
 alias aui='apt-upgrade-info'
+alias auic='apt-upgrade-info -c'
 
 cleanup() {
     echo "Cleaning package cache..."
